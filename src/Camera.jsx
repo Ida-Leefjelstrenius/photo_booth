@@ -10,13 +10,18 @@ export default function Camera() {
   useEffect(() => {
     async function startCamera() {
       try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          setError("Camera not supported or not permitted in this browser.");
+          return;
+        }
         const stream = await navigator.mediaDevices.getUserMedia({
+          //video: { facingMode: "environment" },
           video: { facingMode: "environment" },
         });
         videoRef.current.srcObject = stream;
       } catch (err) {
         console.error("Error accessing the camera", err);
-        setError("Error accessing the camera: " + err.message);
+        setError("Error accessing the camera: " + err.message + " Please use a phone!");
       }
     }
     startCamera();
