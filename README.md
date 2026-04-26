@@ -1,3 +1,12 @@
+# Run
+
+One terminal: npm run dev
+
+Another terminal: ngrok http 3010
+
+Open the website in chrome
+
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
