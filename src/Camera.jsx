@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import moonPic from "./assets/moonPic.jpg";
+import { styles } from "./styles";
+import { usePhoto } from "./PhotoContext";
 
 export default function Camera() {
   const videoRef = useRef(null);
@@ -11,6 +14,8 @@ export default function Camera() {
   const photoDataRef = useRef(null);
   const [facingMode, setFacingMode] = useState("environment");
   const streamRef = useRef(null);
+  const navigate = useNavigate();
+  const { setMergedPhoto } = usePhoto();
   
   useEffect(() => {
     const img = new Image();
@@ -112,6 +117,10 @@ export default function Camera() {
     
     ctx.putImageData(frame, 0, 0);
     photoRef.current.src = canvas.toDataURL("image/png");
+    const dataUrl = canvas.toDataURL("image/png");
+    photoRef.current.src = dataUrl;
+    setMergedPhoto(dataUrl);
+    navigate("/view-picture/");
   };
   
   return (
@@ -159,31 +168,4 @@ export default function Camera() {
     )}
     </div>
   );
-}
-
-const styles = {
-  body: {
-    fontFamily: "Arial, sans-serif",
-    textAlign: "center",
-    padding: "20px",
-  },
-  h1: {
-    fontSize: "24px",
-  },
-  media: {
-    width: "100%",
-    maxWidth: "640px",
-    height: "auto",
-    border: "1px solid #ddd",
-    marginTop: "20px",
-  },
-  button: {
-    fontSize: "18px",
-    padding: "10px 20px",
-    marginTop: "20px",
-    cursor: "pointer",
-  },
-  error: {
-    color: "red",
-  },
 };

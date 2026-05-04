@@ -4,7 +4,7 @@ import ErrorPage from "./ErrorPage";
 
 import Camera from "./Camera";
 import { Children, Component } from "react";
-import ViewPictures from "./ViewPictures";
+import ViewPicture from "./ViewPicture";
 
 const router = createBrowserRouter([
     {
@@ -21,8 +21,8 @@ const router = createBrowserRouter([
         Component: Camera,
       },
       {
-        path: "view-pictures",
-        Component: ViewPictures,
+        path: "view-picture",
+        Component: ViewPicture,
       },
       {
         path: "*",
