@@ -1,8 +1,16 @@
 # Run
 
-One terminal: npm run dev
+One terminal:
+    cd photo_booth_proj\photo_booth\src
+    npm run dev
 
-Another terminal: ngrok http 3010
+Another terminal: 
+    ngrok http 3010
+
+Third terminal:    
+    cd photo_booth_proj\photo_booth\server> 
+    node server.js
+Server running on port 3011
 
 Open the website in chrome
 
