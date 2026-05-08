@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import moonPic from "./assets/moonPic.jpg";
 import { styles } from "./styles";
 import { usePhoto } from "./PhotoContext";
+import { uploadPhoto } from "./api";
 
 export default function Camera() {
   const videoRef = useRef(null);
@@ -16,6 +17,7 @@ export default function Camera() {
   const streamRef = useRef(null);
   const navigate = useNavigate();
   const { setMergedPhoto } = usePhoto();
+  const [uploading, setUploading] = useState(false);
   
   useEffect(() => {
     const img = new Image();
@@ -73,7 +75,7 @@ export default function Camera() {
     setPhotoTaken(false);
   };
   
-  const mergePictures = () => {
+  const mergePictures = async () => {
     if (!photoDataRef.current) {
       console.error("No photo taken yet");
       return;
@@ -85,8 +87,6 @@ export default function Camera() {
     
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-    
-    // Restore the saved photo data onto the canvas
     const frame = photoDataRef.current;
     canvas.width = frame.width;
     canvas.height = frame.height;
@@ -116,11 +116,21 @@ export default function Camera() {
     }
     
     ctx.putImageData(frame, 0, 0);
-    photoRef.current.src = canvas.toDataURL("image/png");
     const dataUrl = canvas.toDataURL("image/png");
     photoRef.current.src = dataUrl;
     setMergedPhoto(dataUrl);
-    navigate("/view-picture/");
+    
+    // Upload to server
+    try {
+      setUploading(true);
+      const code = await uploadPhoto(dataUrl);
+      navigate(`/view-picture?code=${code}`);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      setError("Upload failed. Please check your connection.");
+    } finally {
+      setUploading(false);
+    }
   };
   
   return (
@@ -161,8 +171,8 @@ export default function Camera() {
       <button style={styles.button} onClick={retake}>
       Retake
       </button>
-      <button style={styles.button} onClick={mergePictures}>
-      Use picture
+      <button style={styles.button} onClick={mergePictures} disabled={uploading}>
+      {uploading ? "Uploading..." : "Use picture"}
       </button>
       </div>
     )}

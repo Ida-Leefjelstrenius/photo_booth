@@ -6,6 +6,12 @@ export default defineConfig({
   server: {
     host: true,
     port: 3010,
-    allowedHosts: ['excursion-slum-penpal.ngrok-free.dev']
+    allowedHosts: ['excursion-slum-penpal.ngrok-free.dev'],
+    proxy: {
+      '/ws': {
+        target: 'ws://localhost:3011',
+        ws: true,
+      }
+    }
   }
 })

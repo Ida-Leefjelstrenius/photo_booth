@@ -5,10 +5,11 @@ import ErrorPage from "./ErrorPage";
 import Camera from "./Camera";
 import { Children, Component } from "react";
 import ViewPicture from "./ViewPicture";
+import Display from "./Display";
 
 const router = createBrowserRouter([
-    {
-      
+  {
+    
     path: "/",
     Component: App,
     children: [
@@ -25,9 +26,13 @@ const router = createBrowserRouter([
         Component: ViewPicture,
       },
       {
+        path: "display",
+        Component: Display,
+      },
+      {
         path: "*",
         Component: ErrorPage
       }]
     },
-]);
-export default router;
+  ]);
+  export default router;
