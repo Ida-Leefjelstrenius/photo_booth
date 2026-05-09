@@ -7,6 +7,44 @@ import { fileURLToPath } from 'url';
 import { WebSocketServer } from 'ws';
 import { createServer } from 'https';
 
+const CLOUD_SERVER_URL = 'https://your-app.railway.app'; // fill in after deploying
+const syncQueue = new Set(); // codes waiting to be synced
+
+async function syncToCloud(code, filePath) {
+  try {
+    const formData = new FormData();
+    const fileBuffer = fs.readFileSync(filePath);
+    const blob = new Blob([fileBuffer], { type: 'image/png' });
+    formData.append('photo', blob, 'photo.png');
+    formData.append('code', code);
+
+    const response = await fetch(`${CLOUD_SERVER_URL}/sync`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (response.ok) {
+      console.log(`Synced code ${code} to cloud`);
+      syncQueue.delete(code);
+    } else {
+      console.log(`Sync failed for code ${code}, will retry`);
+    }
+  } catch (err) {
+    console.log(`No internet, queued code ${code} for later`);
+  }
+}
+
+// Retry unsynced photos every 2 minutes
+setInterval(() => {
+  if (syncQueue.size > 0) {
+    console.log(`Retrying sync for ${syncQueue.size} photos...`);
+    for (const code of syncQueue) {
+      const filePath = photoCodes.get(code);
+      if (filePath) syncToCloud(code, filePath);
+    }
+  }
+}, 2 * 60 * 1000);
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -60,7 +98,7 @@ function scheduleDelete(code, filePath) {
     }
     photoCodes.delete(code);
     saveCodesFile();
-  }, 48 * 60 * 60 * 1000); // 48 hours 
+  }, 72 * 60 * 60 * 1000); // 72 hours 
 }
 
 function notifyDisplayScreens(code) {
@@ -88,6 +126,10 @@ app.post('/upload', upload.single('photo'), (req, res) => {
   scheduleDelete(code, filePath);
   console.log(`New photo uploaded with code: ${code}`);
   notifyDisplayScreens(code);
+
+  syncQueue.add(code);
+  syncToCloud(code, filePath);
+
   res.json({ code });
 });
 
