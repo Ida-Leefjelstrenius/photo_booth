@@ -139,39 +139,58 @@ export default function Camera() {
     
     {error && <p style={styles.error}>{error}</p>}
     
+    <div style={styles.cameraContainer}>
     <video
     ref={videoRef}
     autoPlay
     playsInline
-    style={{ ...styles.media, display: photoTaken ? "none" : "block" }}
+    style={{
+      ...styles.media,
+      display: photoTaken ? "none" : "block",
+    }}
     />
     
     {!photoTaken && (
-      <div>
-      <br />
-      <button style={styles.button} onClick={takePhoto}>
-      Take Photo
+      <button
+      style={styles.switchCameraFloating}
+      onClick={switchCamera}
+      aria-label="Switch camera"
+      >
+      🔄
       </button>
-      <button style={styles.button} onClick={switchCamera}>
-      Switch Camera
+    )}
+    
+    <img
+    ref={photoRef}
+    alt="Captured photo will appear here"
+    style={{
+      ...styles.media,
+      display: photoTaken ? "block" : "none",
+    }}
+    />
+    </div>
+    
+    {!photoTaken && (
+      <div style={styles.captureContainer}>
+      <button style={styles.bigButton} onClick={takePhoto}>
+      Take picture
       </button>
       </div>
     )}
     
     <canvas ref={canvasRef} style={{ display: "none" }} />
     
-    <img
-    ref={photoRef}
-    alt="Captured photo will appear here"
-    style={{ ...styles.media, display: photoTaken ? "block" : "none" }}
-    />
-    
     {photoTaken && (
-      <div>
-      <button style={styles.button} onClick={retake}>
+      <div style={styles.actionButtons}>
+      <button style={styles.bigSecondaryButton} onClick={retake}>
       Retake
       </button>
-      <button style={styles.button} onClick={mergePictures} disabled={uploading}>
+      
+      <button
+      style={styles.bigPrimaryButton}
+      onClick={mergePictures}
+      disabled={uploading}
+      >
       {uploading ? "Uploading..." : "Use picture"}
       </button>
       </div>

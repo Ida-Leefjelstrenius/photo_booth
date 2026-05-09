@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { displayStyles, styles } from "./styles";
 
-const SERVER_URL = "http://localhost:3011";
-const WS_URL = "ws://localhost:3011";
+const SERVER_URL = "https://192.168.137.1:3011";
+const WS_URL = "wss://192.168.137.1:3011";  // wss instead of ws
 
 export default function Display() {
   const [photo, setPhoto] = useState(null);

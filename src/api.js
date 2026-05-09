@@ -1,4 +1,5 @@
-const SERVER_URL = 'http://localhost:3011';
+//const SERVER_URL = 'http://localhost:3011';
+const SERVER_URL = 'https://192.168.137.1:3011';  // your laptop's IP
 
 export async function uploadPhoto(dataUrl) {
   // Convert base64 dataUrl to a blob

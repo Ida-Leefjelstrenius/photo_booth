@@ -12,7 +12,12 @@ Third terminal:
     node server.js
 Server running on port 3011
 
-Open the website in chrome
+On the computer: 
+    open https://192.168.137.1:3010/display
+
+On the phone:
+    open https://192.168.137.1:3011/ Acceppt 
+    open open https://192.168.137.1:3010/ accept and take picture
 
 
 # React + Vite

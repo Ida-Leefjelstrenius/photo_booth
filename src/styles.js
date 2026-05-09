@@ -23,11 +23,122 @@ export const styles = {
   error: {
     color: "red",
   },
+  iconButton: {
+    width: "64px",
+    height: "64px",
+    borderRadius: "50%",
+    border: "none",
+    backgroundColor: "#222",
+    color: "white",
+    fontSize: "32px",
+    cursor: "pointer",
+    marginTop: "20px",
+    marginLeft: "12px",
+    boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
+  },
+  cameraContainer: {
+    position: "relative",
+    width: "100%",
+    maxWidth: "640px",
+    margin: "0 auto",
+  },
+  
+  switchCameraFloating: {
+    position: "absolute",
+    top: "16px",
+    right: "16px",
+    
+    width: "56px",
+    height: "56px",
+    
+    borderRadius: "50%",
+    border: "none",
+    
+    backgroundColor: "rgba(0,0,0,0.6)",
+    color: "white",
+    
+    fontSize: "28px",
+    cursor: "pointer",
+    
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    
+    backdropFilter: "blur(4px)",
+    
+    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+    
+    zIndex: 10,
+  },
+  captureButton: {
+    width: "140px",
+    height: "140px",
+    borderRadius: "50%",
+    border: "8px solid #111",
+    backgroundColor: "white",
+    color: "#111",
+    fontSize: "56px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+    marginBottom: "20px",
+  },
+  captureContainer: {
+    display: "flex",
+    justifyContent: "center",
+    marginTop: "24px",
+  },
+  
+  actionButtons: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "20px",
+    marginTop: "24px",
+  },
+  
+  bigButton: {
+    fontSize: "22px",
+    padding: "12px 24px",
+    borderRadius: "16px",
+    border: "2px solid #ccc",
+    backgroundColor: "white",
+    color: "#111",
+    cursor: "pointer",
+    fontFamily: "Arial, sans-serif",
+    boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
+  },
+  
+  bigPrimaryButton: {
+    fontSize: "22px",
+    padding: "12px 24px",
+    borderRadius: "14px",
+    border: "2px solid #ccc",
+    backgroundColor: "#fae997",
+    border: "2px solid #ccc",
+    color: "#111",
+    cursor: "pointer",
+    fontFamily: "Arial, sans-serif",
+    boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
+  },
+  
+  bigSecondaryButton: {
+    fontSize: "22px",
+    padding: "12px 24px",
+    borderRadius: "14px",
+    border: "2px solid #ccc",
+    backgroundColor: "white",
+    color: "#111",
+    cursor: "pointer",
+    fontFamily: "Arial, sans-serif",
+    boxShadow: "0 4px 14px rgba(0,0,0,0.1)",
+  },
 };
 
 export const codeStyles = {
   box: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#f9f4df",
     borderRadius: "12px",
     padding: "20px",
     margin: "20px auto",
@@ -36,17 +147,20 @@ export const codeStyles = {
   label: {
     fontSize: "18px",
     margin: "0",
+    marginBottom: "30px",
   },
   code: {
     fontSize: "64px",
     fontWeight: "bold",
     margin: "10px 0",
     letterSpacing: "8px",
+    color: "#FFD700",
   },
   hint: {
     fontSize: "14px",
     color: "#666",
     margin: "0",
+    marginTop: "30px",
   },
 };
 
@@ -65,7 +179,7 @@ export const displayStyles = {
     fontSize: "48px",
     fontWeight: "bold",
     color: "#FFD700",
-    marginBottom: "20px",
+    marginBottom: "40px",
     position: "absolute",
     top: "20px",
   },
@@ -84,6 +198,7 @@ export const displayStyles = {
     maxHeight: "80vh",
     maxWidth: "70vw",
     objectFit: "contain",
+    marginTop: "30px",
   },
   codeBox: {
     textAlign: "center",

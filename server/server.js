@@ -5,13 +5,20 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { WebSocketServer } from 'ws';
-import { createServer } from 'http';
+import { createServer } from 'https';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const server = createServer(app);
+
+// Load SSL certificates
+const sslOptions = {
+  key: fs.readFileSync(path.join(__dirname, 'key.key')),
+  cert: fs.readFileSync(path.join(__dirname, 'cert.crt')),
+};
+
+const server = createServer(sslOptions, app);  
 const wss = new WebSocketServer({ server });
 
 app.use(cors());

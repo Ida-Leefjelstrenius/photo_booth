@@ -1,16 +1,28 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import fs from 'fs'
+import path from 'path'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+  ],
   server: {
     host: true,
     port: 3010,
-    allowedHosts: ['excursion-slum-penpal.ngrok-free.dev'],
+    https: {
+      key: fs.readFileSync(path.resolve(__dirname, 'certificate/key.key')),
+      cert: fs.readFileSync(path.resolve(__dirname, 'certificate/cert.crt')),
+    },
+    allowedHosts: [
+      'excursion-slum-penpal.ngrok-free.dev',
+      '192.168.137.1'
+    ],
     proxy: {
       '/ws': {
-        target: 'ws://localhost:3011',
+        target: 'wss://192.168.137.1:3011',
         ws: true,
+        secure: false,
       }
     }
   }
