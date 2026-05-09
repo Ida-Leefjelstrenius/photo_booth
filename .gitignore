@@ -27,3 +27,7 @@ node_modules/
 server/node_modules/
 server/photos/
 server/codes.json
+
+cloud-server/node_modules/
+cloud-server/photos/
+cloud-server/codes.json
