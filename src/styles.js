@@ -181,7 +181,7 @@ export const displayStyles = {
     color: "#FFD700",
     marginBottom: "40px",
     position: "absolute",
-    top: "20px",
+    top: "60px",
   },
   noPhoto: {
     fontSize: "32px",
