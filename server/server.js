@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 import { WebSocketServer } from 'ws';
 import { createServer } from 'https';
 
-const CLOUD_SERVER_URL = 'https://your-app.railway.app'; // fill in after deploying
+const CLOUD_SERVER_URL = 'photobooth-production-0ce1.up.railway.app'; // fill in after deploying
 const syncQueue = new Set(); // codes waiting to be synced
 
 async function syncToCloud(code, filePath) {
