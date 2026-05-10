@@ -7,56 +7,17 @@ import { fileURLToPath } from 'url';
 import { WebSocketServer } from 'ws';
 import { createServer } from 'https';
 
-const CLOUD_SERVER_URL = 'photobooth-production-0ce1.up.railway.app'; // fill in after deploying
-const syncQueue = new Set(); // codes waiting to be synced
-
-async function syncToCloud(code, filePath) {
-  try {
-    const formData = new FormData();
-    const fileBuffer = fs.readFileSync(filePath);
-    const blob = new Blob([fileBuffer], { type: 'image/png' });
-    formData.append('photo', blob, 'photo.png');
-    formData.append('code', code);
-
-    const response = await fetch(`${CLOUD_SERVER_URL}/sync`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (response.ok) {
-      console.log(`Synced code ${code} to cloud`);
-      syncQueue.delete(code);
-    } else {
-      console.log(`Sync failed for code ${code}, will retry`);
-    }
-  } catch (err) {
-    console.log(`No internet, queued code ${code} for later`);
-  }
-}
-
-// Retry unsynced photos every 2 minutes
-setInterval(() => {
-  if (syncQueue.size > 0) {
-    console.log(`Retrying sync for ${syncQueue.size} photos...`);
-    for (const code of syncQueue) {
-      const filePath = photoCodes.get(code);
-      if (filePath) syncToCloud(code, filePath);
-    }
-  }
-}, 2 * 60 * 1000);
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Load SSL certificates
 const sslOptions = {
   key: fs.readFileSync(path.join(__dirname, 'key.key')),
   cert: fs.readFileSync(path.join(__dirname, 'cert.crt')),
 };
 
-const server = createServer(sslOptions, app);  
+const server = createServer(sslOptions, app);
 const wss = new WebSocketServer({ server });
 
 app.use(cors());
@@ -69,11 +30,10 @@ if (!fs.existsSync(photosDir)) {
 
 const photoCodes = new Map();
 
-// Load codes on startup (survives restart)
 const codesFile = path.join(__dirname, 'codes.json');
 if (fs.existsSync(codesFile)) {
   const data = JSON.parse(fs.readFileSync(codesFile));
-  Object.entries(data).forEach(([code, path]) => photoCodes.set(code, path));
+  Object.entries(data).forEach(([code, filePath]) => photoCodes.set(code, filePath));
   console.log(`Loaded ${photoCodes.size} codes from file`);
 }
 
@@ -98,7 +58,7 @@ function scheduleDelete(code, filePath) {
     }
     photoCodes.delete(code);
     saveCodesFile();
-  }, 72 * 60 * 60 * 1000); // 72 hours 
+  }, 72 * 60 * 60 * 1000);
 }
 
 function notifyDisplayScreens(code) {
@@ -109,6 +69,45 @@ function notifyDisplayScreens(code) {
   });
 }
 
+// ---- Cloud sync ----
+const CLOUD_SERVER_URL = 'https://photobooth-production-0ce1.up.railway.app';
+const syncQueue = new Set();
+
+async function syncToCloud(code, filePath) {
+  try {
+    const fileBuffer = fs.readFileSync(filePath);
+    const blob = new Blob([fileBuffer], { type: 'image/png' });
+    const formData = new FormData();
+    formData.append('photo', blob, 'photo.png');
+    formData.append('code', code);
+
+    const response = await fetch(`${CLOUD_SERVER_URL}/sync`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (response.ok) {
+      console.log(`Synced code ${code} to cloud`);
+      syncQueue.delete(code);
+    } else {
+      console.log(`Sync failed for code ${code}, will retry`);
+    }
+  } catch (err) {
+    console.log(`No internet, queued code ${code} for later`);
+  }
+}
+
+setInterval(() => {
+  if (syncQueue.size > 0) {
+    console.log(`Retrying sync for ${syncQueue.size} photos...`);
+    for (const code of syncQueue) {
+      const filePath = photoCodes.get(code);
+      if (filePath) syncToCloud(code, filePath);
+    }
+  }
+}, 2 * 60 * 1000);
+
+// ---- Routes ----
 const storage = multer.diskStorage({
   destination: photosDir,
   filename: (req, file, cb) => {
@@ -126,10 +125,8 @@ app.post('/upload', upload.single('photo'), (req, res) => {
   scheduleDelete(code, filePath);
   console.log(`New photo uploaded with code: ${code}`);
   notifyDisplayScreens(code);
-
   syncQueue.add(code);
   syncToCloud(code, filePath);
-
   res.json({ code });
 });
 
@@ -151,5 +148,5 @@ app.get('/latest', (req, res) => {
 });
 
 server.listen(3011, () => {
-  console.log('Server running on port 3011');
+  console.log('Server running on https port 3011');
 });

@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import moonPic from "./assets/moonPic.jpg";
 import { styles } from "./styles";
-import { usePhoto } from "./PhotoContext";
+import { usePhoto, backgrounds } from "./PhotoContext";
 import { uploadPhoto } from "./api";
+import { mergeWithBackground } from "./useMerge";
 
 export default function Camera() {
   const videoRef = useRef(null);
@@ -11,29 +12,18 @@ export default function Camera() {
   const photoRef = useRef(null);
   const [photoTaken, setPhotoTaken] = useState(false);
   const [error, setError] = useState(null);
-  const backgroundImageRef = useRef(null);
+  const { setMergedPhoto, selectedBg, setRawPhotoData } = usePhoto();
   const photoDataRef = useRef(null);
   const [facingMode, setFacingMode] = useState("environment");
   const streamRef = useRef(null);
   const navigate = useNavigate();
-  const { setMergedPhoto } = usePhoto();
   const [uploading, setUploading] = useState(false);
   
   useEffect(() => {
-    const img = new Image();
-    img.src = moonPic;
-    img.onload = () => {
-      backgroundImageRef.current = img;
-      console.log("Background image loaded!");
-    };
-    img.onerror = () => {
-      console.error("Failed to load background image");
-    };
     startCamera(facingMode);
   }, [facingMode]);
   
   async function startCamera(mode) {
-    // Stop existing stream first
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
     }
@@ -42,14 +32,20 @@ export default function Camera() {
         setError("Camera not supported or not permitted in this browser.");
         return;
       }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: mode }
-      });
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: mode }
+        });
+      } catch {
+        // fallback to any available camera
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
       streamRef.current = stream;
       videoRef.current.srcObject = stream;
     } catch (err) {
       console.error("Error accessing the camera", err);
-      setError("Error accessing the camera: " + err.message);
+      setError("Error accessing the camera: " + err.message + " Please use a phone!");
     }
   }
   
@@ -59,78 +55,45 @@ export default function Camera() {
   
   const takePhoto = () => {
     const video = videoRef.current;
+    if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
+      setError("Camera is not ready yet. Please wait a moment and try again.");
+      return;
+    }
     const canvas = canvasRef.current;
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    photoDataRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    photoDataRef.current = imageData;
+    setRawPhotoData(imageData);  // save to context for re-merge
     const imageDataUrl = canvas.toDataURL("image/jpeg");
     photoRef.current.src = imageDataUrl;
     setPhotoTaken(true);
   };
   
-  const retake = () => {
-    photoRef.current.src = "";
-    setPhotoTaken(false);
-  };
-  
   const mergePictures = async () => {
-    if (!photoDataRef.current) {
-      console.error("No photo taken yet");
-      return;
-    }
-    if (!backgroundImageRef.current) {
-      console.error("Background image not loaded");
-      return;
-    }
+    if (!photoDataRef.current) return;
     
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    const frame = photoDataRef.current;
-    canvas.width = frame.width;
-    canvas.height = frame.height;
-    ctx.putImageData(frame, 0, 0);
-    
-    const width = canvas.width;
-    const height = canvas.height;
-    const data = frame.data;
-    
-    const bgCanvas = document.createElement("canvas");
-    bgCanvas.width = width;
-    bgCanvas.height = height;
-    const bgCtx = bgCanvas.getContext("2d");
-    bgCtx.drawImage(backgroundImageRef.current, 0, 0, width, height);
-    const bgFrame = bgCtx.getImageData(0, 0, width, height);
-    const bgData = bgFrame.data;
-    
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      if (g > r * 1.1 && g > b * 1.1 && g > 60) {
-        data[i] = bgData[i];
-        data[i + 1] = bgData[i + 1];
-        data[i + 2] = bgData[i + 2];
-      }
-    }
-    
-    ctx.putImageData(frame, 0, 0);
-    const dataUrl = canvas.toDataURL("image/png");
+    const dataUrl = await mergeWithBackground(photoDataRef.current, selectedBg);
     photoRef.current.src = dataUrl;
     setMergedPhoto(dataUrl);
     
-    // Upload to server
     try {
       setUploading(true);
       const code = await uploadPhoto(dataUrl);
       navigate(`/view-picture?code=${code}`);
     } catch (err) {
       console.error("Upload failed:", err);
-      setError("Upload failed. Please check your connection.");
+      navigate(`/view-picture?code=offline`);
     } finally {
       setUploading(false);
     }
+  };
+  
+  const retake = () => {
+    photoRef.current.src = "";
+    setPhotoTaken(false);
   };
   
   return (

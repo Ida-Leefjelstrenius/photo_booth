@@ -226,3 +226,30 @@ export const displayStyles = {
     maxWidth: "200px",
   },
 };
+
+export const bgStyles = {
+  container: {
+    marginTop: "24px",
+    textAlign: "center",
+  },
+  label: {
+    fontSize: "16px",
+    color: "#666",
+    marginBottom: "10px",
+    fontFamily: "Arial, sans-serif",
+  },
+  grid: {
+    display: "flex",
+    flexDirection: "row",
+    gap: "10px",
+    justifyContent: "center",
+    flexWrap: "wrap",
+  },
+  thumbnail: {
+    width: "80px",
+    height: "60px",
+    objectFit: "cover",
+    borderRadius: "8px",
+    cursor: "pointer",
+  },
+};
