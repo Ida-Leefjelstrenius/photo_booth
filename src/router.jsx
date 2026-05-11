@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from './App';
 import ErrorPage from "./ErrorPage";
+import FindOldPicture from "./FindOldPicture"
 
 import Camera from "./Camera";
 import { Children, Component } from "react";
@@ -28,6 +29,10 @@ const router = createBrowserRouter([
       {
         path: "display",
         Component: Display,
+      },
+      {
+        path: "find-old-picture",
+        Component: FindOldPicture,
       },
       {
         path: "*",

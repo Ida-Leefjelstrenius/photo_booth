@@ -1,11 +1,8 @@
-//const SERVER_URL = 'http://localhost:3011';
-const SERVER_URL = 'https://192.168.137.1:3011';  // your laptop's IP
+const SERVER_URL = 'https://192.168.137.1:3011';
 
 export async function uploadPhoto(dataUrl) {
-  // Convert base64 dataUrl to a blob
   const response = await fetch(dataUrl);
   const blob = await response.blob();
-
   const formData = new FormData();
   formData.append('photo', blob, 'photo.png');
 

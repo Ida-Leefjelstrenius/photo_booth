@@ -2,7 +2,6 @@ import { usePhoto, backgrounds } from "./PhotoContext";
 import { mergeWithBackground } from "./useMerge";
 import { styles, codeStyles, bgStyles } from "./styles";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { uploadPhoto } from "./api";
 import { useState } from "react";
 
 export default function ViewPicture() {
@@ -10,7 +9,6 @@ export default function ViewPicture() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const code = searchParams.get("code");
-    const isOffline = code === "offline";
     const [remerging, setRemerging] = useState(false);
     
     const changeBg = async (index) => {
@@ -19,15 +17,13 @@ export default function ViewPicture() {
         setRemerging(true);
         const dataUrl = await mergeWithBackground(rawPhotoData, index);
         setMergedPhoto(dataUrl);
-        
-        try {
-            const newCode = await uploadPhoto(dataUrl);  // gets new code
-            // update URL with new code
-            navigate(`/view-picture?code=${newCode}`, { replace: true });
-        } catch (err) {
-            console.error("Re-upload failed:", err);
-        }
-        setRemerging(false);
+    };
+
+    const downloadPhoto = () => {
+        const link = document.createElement("a");
+        link.download = `photo-${code}.png`;
+        link.href = mergedPhoto;
+        link.click();
     };
     
     return (
@@ -36,7 +32,7 @@ export default function ViewPicture() {
         
         {/* Background selector */}
         <div style={bgStyles.container}>
-        <p style={bgStyles.label}>Not happy with the background? Try another:</p>
+        <p style={bgStyles.label}> Try another background </p>
         <div style={bgStyles.grid}>
         {backgrounds.map((bg, index) => (
             <img
@@ -66,26 +62,21 @@ export default function ViewPicture() {
         )}
         
         {/* Code */}
-        {!isOffline && code && (
+        {code && (
             <div style={codeStyles.box}>
-            <p style={codeStyles.label}>Your code:</p>
-            <p style={codeStyles.code}>{code}</p>
-            <p style={codeStyles.hint}>Use it to download your photo at WEBSITE</p>
+                <p style={codeStyles.label}>Your code:</p>
+                <p style={codeStyles.code}>{code}</p>
+                <p style={codeStyles.hint}>Find you photo with the code </p>
             </div>
-        )}
-        
-        {isOffline && (
-            <div style={codeStyles.box}>
-            <p style={codeStyles.label}>No internet connection</p>
-            <p style={codeStyles.hint}>Your photo will be available when internet is restored.</p>
+        )}        
+            <div>
+                <button style={styles.bigButton} onClick={() => navigate("/")}>
+                    Take Another Photo
+                </button>
+                <button style={styles.bigButton} onClick={downloadPhoto}>
+                    Download Picture 
+                </button>
             </div>
-        )}
-        
-        <div>
-        <button style={styles.bigButton} onClick={() => navigate("/")}>
-        Take Another Photo
-        </button>
-        </div>
         </div>
     );
 }

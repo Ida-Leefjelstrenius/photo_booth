@@ -24,6 +24,15 @@ function App() {
         >
           Display
         </Link>
+        <Link
+          to="/find-old-picture"
+          style={{
+            ...navStyles.link,
+            ...(location.pathname === '/find-old-picture' ? navStyles.active : {})
+          }}
+        >
+          Find Photo
+        </Link>
         <a
           href="https://192.168.137.1:3011"
           target="_blank"

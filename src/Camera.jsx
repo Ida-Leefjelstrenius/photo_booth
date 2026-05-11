@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import moonPic from "./assets/moonPic.jpg";
 import { styles } from "./styles";
 import { usePhoto, backgrounds } from "./PhotoContext";
-import { uploadPhoto } from "./api";
 import { mergeWithBackground } from "./useMerge";
+import { uploadPhoto } from "./api";
 
 export default function Camera() {
   const videoRef = useRef(null);
@@ -17,7 +16,6 @@ export default function Camera() {
   const [facingMode, setFacingMode] = useState("environment");
   const streamRef = useRef(null);
   const navigate = useNavigate();
-  const [uploading, setUploading] = useState(false);
   
   useEffect(() => {
     startCamera(facingMode);
@@ -38,7 +36,6 @@ export default function Camera() {
           video: { facingMode: mode }
         });
       } catch {
-        // fallback to any available camera
         stream = await navigator.mediaDevices.getUserMedia({ video: true });
       }
       streamRef.current = stream;
@@ -66,7 +63,7 @@ export default function Camera() {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     photoDataRef.current = imageData;
-    setRawPhotoData(imageData);  // save to context for re-merge
+    setRawPhotoData(imageData);
     const imageDataUrl = canvas.toDataURL("image/jpeg");
     photoRef.current.src = imageDataUrl;
     setPhotoTaken(true);
@@ -74,20 +71,16 @@ export default function Camera() {
   
   const mergePictures = async () => {
     if (!photoDataRef.current) return;
-    
     const dataUrl = await mergeWithBackground(photoDataRef.current, selectedBg);
     photoRef.current.src = dataUrl;
     setMergedPhoto(dataUrl);
     
     try {
-      setUploading(true);
-      const code = await uploadPhoto(dataUrl);
+      const code = await uploadPhoto(dataUrl);  // local server only
       navigate(`/view-picture?code=${code}`);
     } catch (err) {
       console.error("Upload failed:", err);
-      navigate(`/view-picture?code=offline`);
-    } finally {
-      setUploading(false);
+      navigate(`/view-picture?code=error`);
     }
   };
   
@@ -148,16 +141,11 @@ export default function Camera() {
       <button style={styles.bigSecondaryButton} onClick={retake}>
       Retake
       </button>
-      
-      <button
-      style={styles.bigPrimaryButton}
-      onClick={mergePictures}
-      disabled={uploading}
-      >
-      {uploading ? "Uploading..." : "Use picture"}
+      <button style={styles.bigPrimaryButton} onClick={mergePictures}>
+      Use picture
       </button>
       </div>
     )}
     </div>
   );
-};
+}
