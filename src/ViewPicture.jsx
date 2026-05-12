@@ -3,6 +3,7 @@ import { mergeWithBackground } from "./useMerge";
 import { styles, codeStyles, bgStyles } from "./styles";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
+import { reuploadPhoto } from "./api";
 
 export default function ViewPicture() {
     const { mergedPhoto, setMergedPhoto, selectedBg, setSelectedBg, rawPhotoData } = usePhoto();
@@ -17,9 +18,18 @@ export default function ViewPicture() {
         setRemerging(true);
         const dataUrl = await mergeWithBackground(rawPhotoData, index);
         setMergedPhoto(dataUrl);
-        setRemerging(false); 
+        
+        // Upload with new code so display and get-photo both work
+        try {
+            const newCode = await reuploadPhoto(dataUrl);
+            navigate(`/view-picture?code=${newCode}`, { replace: true });
+        } catch (err) {
+            console.error("Reupload failed:", err);
+        }
+        
+        setRemerging(false);
     };
-
+    
     const downloadPhoto = () => {
         const link = document.createElement("a");
         link.download = `photo-${code}.png`;
@@ -53,7 +63,6 @@ export default function ViewPicture() {
         </div>
         </div>
         
-        {/* Merged photo */}
         {remerging ? (
             <p>Applying background...</p>
         ) : mergedPhoto ? (
@@ -65,19 +74,19 @@ export default function ViewPicture() {
         {/* Code */}
         {code && (
             <div style={codeStyles.box}>
-                <p style={codeStyles.label}>Your code:</p>
-                <p style={codeStyles.code}>{code}</p>
-                <p style={codeStyles.hint}>Find you photo with the code </p>
+            <p style={codeStyles.label}>Your code:</p>
+            <p style={codeStyles.code}>{code}</p>
+            <p style={codeStyles.hint}>Find you photo with the code </p>
             </div>
         )}        
-            <div>
-                <button style={styles.bigButton} onClick={() => navigate("/")}>
-                    Take Another Photo
-                </button>
-                <button style={styles.bigButton} onClick={downloadPhoto}>
-                    Download Picture 
-                </button>
-            </div>
+        <div>
+        <button style={styles.bigButton} onClick={() => navigate("/")}>
+        Take Another Photo
+        </button>
+        <button style={styles.bigButton} onClick={downloadPhoto}>
+        Download Picture 
+        </button>
+        </div>
         </div>
     );
 }

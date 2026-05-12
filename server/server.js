@@ -109,3 +109,14 @@ app.get('/latest', (req, res) => {
 server.listen(3011, () => {
   console.log('Server running on https port 3011');
 });
+
+app.post('/reupload', upload.single('photo'), (req, res) => {
+  const code = generateCode();
+  const filePath = req.file.path;
+  photoCodes.set(code, filePath);
+  saveCodesFile();
+  scheduleDelete(code, filePath);
+  console.log(`Re-uploaded photo with new code: ${code}`);
+  notifyDisplayScreens(code);  // updates display screen too
+  res.json({ code });
+});

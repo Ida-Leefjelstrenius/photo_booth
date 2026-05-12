@@ -40,7 +40,7 @@ export default function Display() {
       <div style={displayStyles.codeBox}>
       <p style={displayStyles.codeLabel}>Your code:</p>
       <p style={displayStyles.code}>{code}</p>
-      <p style={displayStyles.hint}>Type your code on the website to download</p>
+      <p style={displayStyles.hint}>Find you photo with the code </p>
       </div>
       </div>
     )}

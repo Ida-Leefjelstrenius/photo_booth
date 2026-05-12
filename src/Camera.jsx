@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { styles } from "./styles";
-import { usePhoto, backgrounds } from "./PhotoContext";
+import { usePhoto } from "./PhotoContext";
 import { mergeWithBackground } from "./useMerge";
 import { uploadPhoto } from "./api";
 
@@ -16,11 +16,11 @@ export default function Camera() {
   const [facingMode, setFacingMode] = useState("environment");
   const streamRef = useRef(null);
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     startCamera(facingMode);
   }, [facingMode]);
-  
+
   async function startCamera(mode) {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
@@ -45,11 +45,11 @@ export default function Camera() {
       setError("Error accessing the camera: " + err.message + " Please use a phone!");
     }
   }
-  
+
   const switchCamera = () => {
     setFacingMode(prev => prev === "environment" ? "user" : "environment");
   };
-  
+
   const takePhoto = () => {
     const video = videoRef.current;
     if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
@@ -68,84 +68,84 @@ export default function Camera() {
     photoRef.current.src = imageDataUrl;
     setPhotoTaken(true);
   };
-  
+
   const mergePictures = async () => {
     if (!photoDataRef.current) return;
     const dataUrl = await mergeWithBackground(photoDataRef.current, selectedBg);
     photoRef.current.src = dataUrl;
     setMergedPhoto(dataUrl);
-    
+
     try {
-      const code = await uploadPhoto(dataUrl);  // local server only
+      const code = await uploadPhoto(dataUrl);
       navigate(`/view-picture?code=${code}`);
     } catch (err) {
       console.error("Upload failed:", err);
       navigate(`/view-picture?code=error`);
     }
   };
-  
+
   const retake = () => {
     photoRef.current.src = "";
     setPhotoTaken(false);
   };
-  
+
   return (
     <div style={styles.body}>
-    <h1 style={styles.h1}>Camera Access and Photo Capture</h1>
-    
-    {error && <p style={styles.error}>{error}</p>}
-    
-    <div style={styles.cameraContainer}>
-    <video
-    ref={videoRef}
-    autoPlay
-    playsInline
-    style={{
-      ...styles.media,
-      display: photoTaken ? "none" : "block",
-    }}
-    />
-    
-    {!photoTaken && (
-      <button
-      style={styles.switchCameraFloating}
-      onClick={switchCamera}
-      aria-label="Switch camera"
-      >
-      🔄
-      </button>
-    )}
-    
-    <img
-    ref={photoRef}
-    alt="Captured photo will appear here"
-    style={{
-      ...styles.media,
-      display: photoTaken ? "block" : "none",
-    }}
-    />
-    </div>
-    
-    {!photoTaken && (
-      <div style={styles.captureContainer}>
-      <button style={styles.bigButton} onClick={takePhoto}>
-      Take picture
-      </button>
+      <h1 style={styles.h1}>Camera Access and Photo Capture</h1>
+
+      {error && <p style={styles.error}>{error}</p>}
+
+      <div style={styles.cameraContainer}>
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          style={{
+            ...styles.media,
+            display: photoTaken ? "none" : "block",
+          }}
+        />
+
+        {!photoTaken && (
+          <button
+            style={styles.switchCameraFloating}
+            onClick={switchCamera}
+            aria-label="Switch camera"
+          >
+            🔄
+          </button>
+        )}
+
+        <img
+          ref={photoRef}
+          alt="Captured photo will appear here"
+          style={{
+            ...styles.media,
+            display: photoTaken ? "block" : "none",
+          }}
+        />
       </div>
-    )}
-    
-    <canvas ref={canvasRef} style={{ display: "none" }} />
-    
-    {photoTaken && (
-      <div style={styles.actionButtons}>
-      <button style={styles.bigSecondaryButton} onClick={retake}>
-      Retake
-      </button>
-      <button style={styles.bigPrimaryButton} onClick={mergePictures}>
-      Use picture
-      </button>
-      </div>
-    )}
+
+      {!photoTaken && (
+        <div style={styles.captureContainer}>
+          <button style={styles.bigButton} onClick={takePhoto}>
+            Take picture
+          </button>
+        </div>
+      )}
+
+      <canvas ref={canvasRef} style={{ display: "none" }} />
+
+      {photoTaken && (
+        <div style={styles.actionButtons}>
+          <button style={styles.bigSecondaryButton} onClick={retake}>
+            Retake
+          </button>
+          <button style={styles.bigPrimaryButton} onClick={mergePictures}>
+            Use picture
+          </button>
+        </div>
+      )}
     </div>
   );
 }

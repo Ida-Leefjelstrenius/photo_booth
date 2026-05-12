@@ -32,3 +32,19 @@ export async function downloadPhoto(code) {
   const blob = await response.blob();
   return URL.createObjectURL(blob);
 }
+
+export async function reuploadPhoto(dataUrl) {
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  const formData = new FormData();
+  formData.append('photo', blob, 'photo.png');
+
+  const uploadResponse = await fetch(`${SERVER_URL}/reupload`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!uploadResponse.ok) throw new Error('Reupload failed');
+  const data = await uploadResponse.json();
+  return data.code;
+}
