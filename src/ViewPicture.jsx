@@ -17,6 +17,7 @@ export default function ViewPicture() {
         setRemerging(true);
         const dataUrl = await mergeWithBackground(rawPhotoData, index);
         setMergedPhoto(dataUrl);
+        setRemerging(false); 
     };
 
     const downloadPhoto = () => {
