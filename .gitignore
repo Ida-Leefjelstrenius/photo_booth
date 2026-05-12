@@ -31,3 +31,4 @@ server/codes.json
 cloud-server/node_modules/
 cloud-server/photos/
 cloud-server/codes.json
+cloud-server/.env

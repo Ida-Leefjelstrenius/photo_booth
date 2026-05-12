@@ -1,73 +1,137 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { v2 as cloudinary } from 'cloudinary';
+import { WebSocketServer } from 'ws';
+import { createServer } from 'http';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
+const server = createServer(app);
+const wss = new WebSocketServer({ server });
+
 app.use(cors());
 app.use(express.json());
 
-const photosDir = path.join(__dirname, 'photos');
-if (!fs.existsSync(photosDir)) fs.mkdirSync(photosDir);
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const photoCodes = new Map();
 
-const codesFile = path.join(__dirname, 'codes.json');
-if (fs.existsSync(codesFile)) {
-  const data = JSON.parse(fs.readFileSync(codesFile));
-  Object.entries(data).forEach(([code, filePath]) => photoCodes.set(code, filePath));
+function generateCode() {
+  let code;
+  do {
+    code = Math.floor(1000 + Math.random() * 9000).toString();
+  } while (photoCodes.has(code));
+  return code;
 }
 
-function saveCodesFile() {
-  fs.writeFileSync(codesFile, JSON.stringify(Object.fromEntries(photoCodes)));
+function notifyDisplayScreens(code, url) {
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) {
+      client.send(JSON.stringify({ code, url }));
+    }
+  });
 }
 
-function scheduleDelete(code, filePath) {
-  setTimeout(() => {
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    photoCodes.delete(code);
-    saveCodesFile();
-    console.log(`Deleted photo for code ${code}`);
-  }, 72 * 60 * 60 * 1000);
+// Use memory storage — upload buffer directly to Cloudinary
+const upload = multer({ storage: multer.memoryStorage() });
+
+async function uploadToCloudinary(buffer) {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader.upload_stream(
+      {
+        folder: 'photobooth',
+        format: 'png',
+      },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }
+    ).end(buffer);
+  });
 }
 
-const storage = multer.diskStorage({
-  destination: photosDir,
-  filename: (req, file, cb) => cb(null, `${Date.now()}.png`)
+async function deleteFromCloudinary(publicId) {
+  try {
+    await cloudinary.uploader.destroy(publicId);
+    console.log(`Deleted from Cloudinary: ${publicId}`);
+  } catch (err) {
+    console.error(`Failed to delete ${publicId}:`, err);
+  }
+}
+
+app.post('/upload', upload.single('photo'), async (req, res) => {
+  try {
+    const result = await uploadToCloudinary(req.file.buffer);
+    const code = generateCode();
+
+    photoCodes.set(code, {
+      url: result.secure_url,
+      publicId: result.public_id
+    });
+
+    // Auto-delete after 48 hours
+    setTimeout(() => {
+      deleteFromCloudinary(result.public_id);
+      photoCodes.delete(code);
+    }, 48 * 60 * 60 * 1000);
+
+    console.log(`New photo uploaded with code: ${code}`);
+    notifyDisplayScreens(code, result.secure_url);
+    res.json({ code });
+  } catch (err) {
+    console.error('Upload failed:', err);
+    res.status(500).json({ error: 'Upload failed' });
+  }
 });
 
-const upload = multer({ storage });
+app.post('/reupload', upload.single('photo'), async (req, res) => {
+  try {
+    const result = await uploadToCloudinary(req.file.buffer);
+    const code = generateCode();
 
-// Local server syncs photos here with code already generated
-app.post('/sync', upload.single('photo'), (req, res) => {
-  const { code } = req.body;
-  if (!code) return res.status(400).json({ error: 'Code required' });
-  const filePath = req.file.path;
-  photoCodes.set(code, filePath);
-  saveCodesFile();
-  scheduleDelete(code, filePath);
-  console.log(`Synced photo with code: ${code}`);
-  res.json({ success: true, code });
+    photoCodes.set(code, {
+      url: result.secure_url,
+      publicId: result.public_id
+    });
+
+    setTimeout(() => {
+      deleteFromCloudinary(result.public_id);
+      photoCodes.delete(code);
+    }, 48 * 60 * 60 * 1000);
+
+    console.log(`Re-uploaded with new code: ${code}`);
+    notifyDisplayScreens(code, result.secure_url);
+    res.json({ code });
+  } catch (err) {
+    console.error('Reupload failed:', err);
+    res.status(500).json({ error: 'Reupload failed' });
+  }
 });
 
 app.get('/download/:code', (req, res) => {
-  const filePath = photoCodes.get(req.params.code);
-  if (!filePath || !fs.existsSync(filePath)) {
+  const entry = photoCodes.get(req.params.code);
+  if (!entry) {
     return res.status(404).json({ error: 'Photo not found or expired' });
   }
-  res.sendFile(filePath);
+  res.json({ url: entry.url });
 });
 
-app.get('/check/:code', (req, res) => {
-  const exists = photoCodes.has(req.params.code) &&
-    fs.existsSync(photoCodes.get(req.params.code));
-  res.json({ exists });
+app.get('/latest', (req, res) => {
+  if (photoCodes.size === 0) {
+    return res.status(404).json({ error: 'No photos yet' });
+  }
+  const lastCode = [...photoCodes.keys()].at(-1);
+  const entry = photoCodes.get(lastCode);
+  res.json({ code: lastCode, url: entry.url });
 });
 
 const PORT = process.env.PORT || 3012;
-app.listen(PORT, () => console.log(`Cloud server running on port ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`Cloud server running on port ${PORT}`);
+});
